@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sing-box 服务器配置生成器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .form-control, .form-select {
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .output-card {
+            margin-top: 1.5rem;
+        }
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .output-header .btn-group {
+            margin-left: auto;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #212529;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #495057;
+        }
+        .nav-tabs .nav-link {
+            cursor: pointer;
+        }
+        .input-group-text {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="text-center mb-4">
+            <i class="bi bi-shield-shaded" style="font-size: 3rem;"></i>
+            <h1 class="mt-2">Sing-box 服务器配置生成器</h1>
+            <p class="lead text-muted">为当前最主流的抗封锁协议生成 sing-box 服务端及客户端配置。</p>
+        </div>
+
+        <!-- Common Settings -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">通用参数</h5>
+                <div class="mb-2">
+                    <label for="server-ip" class="form-label">服务器 IP / 域名</label>
+                    <input type="text" class="form-control" id="server-ip" placeholder="例如: 1.2.3.4 或 your.domain.com">
+                </div>
+            </div>
+        </div>
+
+        <!-- Protocol Tabs -->
+        <ul class="nav nav-tabs mb-3" id="protocolTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="reality-tab" data-bs-toggle="tab" data-bs-target="#reality" type="button" role="tab" aria-controls="reality" aria-selected="true"><i class="bi bi-shield-check"></i> VLESS + REALITY</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="shadowtls-tab" data-bs-toggle="tab" data-bs-target="#shadowtls" type="button" role="tab" aria-controls="shadowtls" aria-selected="false"><i class="bi bi-shield-lock"></i> VLESS + WSS + ShadowTLS</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="hysteria-tab" data-bs-toggle="tab" data-bs-target="#hysteria" type="button" role="tab" aria-controls="hysteria" aria-selected="false"><i class="bi bi-lightning-charge"></i> Hysteria 2</button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="protocolTabsContent">
+            <!-- REALITY Panel -->
+            <div class="tab-pane fade show active" id="reality" role="tabpanel" aria-labelledby="reality-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">VLESS + REALITY 参数</h5>
+                        <div class="mb-3">
+                            <label for="reality-uuid" class="form-label">用户 UUID</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="reality-uuid">
+                                <span class="input-group-text" onclick="document.getElementById('reality-uuid').value = generateUUID()"><i class="bi bi-arrow-repeat"></i></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reality-listen-port" class="form-label">监听端口</label>
+                            <input type="number" class="form-control" id="reality-listen-port" value="443">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reality-sni" class="form-label">伪装域名 (SNI)</label>
+                            <input type="text" class="form-control" id="reality-sni" value="www.microsoft.com">
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="generateAllConfigs('reality')"><i class="bi bi-gear-fill"></i> 生成全部配置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ShadowTLS Panel -->
+            <div class="tab-pane fade" id="shadowtls" role="tabpanel" aria-labelledby="shadowtls-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">VLESS + WSS + ShadowTLS 参数</h5>
+                        <div class="mb-3">
+                            <label for="shadowtls-uuid" class="form-label">用户 UUID</label>
+                             <div class="input-group">
+                                <input type="text" class="form-control" id="shadowtls-uuid">
+                                <span class="input-group-text" onclick="document.getElementById('shadowtls-uuid').value = generateUUID()"><i class="bi bi-arrow-repeat"></i></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shadowtls-password" class="form-label">ShadowTLS 密码</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="shadowtls-password">
+                                <span class="input-group-text" onclick="document.getElementById('shadowtls-password').value = generatePassword(16)"><i class="bi bi-arrow-repeat"></i></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shadowtls-listen-port" class="form-label">监听端口</label>
+                            <input type="number" class="form-control" id="shadowtls-listen-port" value="443">
+                        </div>
+                        <div class="mb-3">
+                            <label for="shadowtls-sni" class="form-label">伪装域名 (SNI)</label>
+                            <input type="text" class="form-control" id="shadowtls-sni" value="www.bing.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="shadowtls-ws-path" class="form-label">WebSocket 路径</label>
+                            <input type="text" class="form-control" id="shadowtls-ws-path" value="/ws-path">
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="generateAllConfigs('shadowtls')"><i class="bi bi-gear-fill"></i> 生成全部配置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hysteria 2 Panel -->
+            <div class="tab-pane fade" id="hysteria" role="tabpanel" aria-labelledby="hysteria-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Hysteria 2 参数</h5>
+                        <div class="mb-3">
+                            <label for="hysteria-password" class="form-label">连接密码</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="hysteria-password">
+                                <span class="input-group-text" onclick="document.getElementById('hysteria-password').value = generatePassword(24)"><i class="bi bi-arrow-repeat"></i></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="hysteria-listen-port" class="form-label">监听端口</label>
+                            <input type="text" class="form-control" id="hysteria-listen-port" value="443">
+                             <div class="form-text">服务器监听的端口。可以是单端口(e.g., <code>443</code>)或端口范围(e.g., <code>30000-40000</code>)。客户端会自动进行端口跳跃。</div>
+                        </div>
+                         <div class="mb-3">
+                            <label for="hysteria-sni" class="form-label">SNI / 域名</label>
+                            <input type="text" class="form-control" id="hysteria-sni" placeholder="例如: your.domain.com">
+                             <div class="form-text">在使用自定义证书时，这里应填写你的域名。</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="hysteria-cert-path" class="form-label">证书路径 (可选)</label>
+                            <input type="text" class="form-control" id="hysteria-cert-path" placeholder="/path/to/your/fullchain.pem">
+                        </div>
+                        <div class="mb-3">
+                            <label for="hysteria-key-path" class="form-label">私钥路径 (可选)</label>
+                            <input type="text" class="form-control" id="hysteria-key-path" placeholder="/path/to/your/private.key">
+                             <div class="form-text">如果以上两项留空，将使用自签名证书。</div>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="generateAllConfigs('hysteria')"><i class="bi bi-gear-fill"></i> 生成全部配置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Output Area -->
+        <div id="output-container" class="d-none">
+            <!-- Helper Commands -->
+            <div id="helper-commands-card" class="card output-card d-none">
+                 <div class="card-header output-header">
+                    <h5 class="mb-0"><i class="bi bi-magic"></i> 辅助命令</h5>
+                    <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('helper-commands-output', this)">
+                        <i class="bi bi-clipboard"></i> 一键复制
+                    </button>
+                </div>
+                <div class="card-body">
+                    <pre><code id="helper-commands-output"></code></pre>
+                </div>
+            </div>
+            <!-- Server Config -->
+            <div class="card output-card">
+                <div class="card-header output-header">
+                    <h5 class="mb-0"><i class="bi bi-filetype-json"></i> 服务端配置文件 (例如: 01_reality.json)</h5>
+                    <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('server-config-output', this)">
+                        <i class="bi bi-clipboard"></i> 一键复制
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="reality-key-warning" class="alert alert-warning d-none" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i> <strong>重要:</strong> 请将下方“辅助命令”中的 <code>sing-box generate reality-keypair</code> 命令在服务器上执行，并将生成的公钥/私钥替换配置中的占位符。
+                    </div>
+                    <pre><code id="server-config-output"></code></pre>
+                </div>
+            </div>
+            <!-- Share Link -->
+            <div class="card output-card">
+                <div class="card-header output-header">
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> 客户端分享链接</h5>
+                    <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('share-link-output', this)">
+                        <i class="bi bi-clipboard"></i> 一键复制
+                    </button>
+                </div>
+                <div class="card-body">
+                     <div id="share-link-warning" class="alert alert-info d-none" role="alert"></div>
+                    <pre><code id="share-link-output"></code></pre>
+                </div>
+            </div>
+            <!-- Mihomo Config -->
+            <div class="card output-card">
+                <div class="card-header output-header">
+                    <h5 class="mb-0"><i class="bi bi-filetype-yaml"></i> Mihomo (Clash.Meta) 客户端配置</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-info btn-sm" id="mihomo-compress-btn" onclick="toggleMihomoCompression(this)">
+                            <i class="bi bi-arrows-angle-contract"></i> 压缩
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('mihomo-config-output', this)">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <pre><code id="mihomo-config-output" data-original-content=""></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Installation Script Area -->
+        <div class="card output-card">
+            <div class="card-header output-header">
+                <h5 class="mb-0"><i class="bi bi-terminal"></i> 一键安装脚本</h5>
+                <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('install-script', this)">
+                    <i class="bi bi-clipboard"></i> 一键复制
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill"></i> 将此脚本粘贴到你的 Linux 服务器上以 root 用户身份运行，即可自动安装并设置 sing-box。
+                </div>
+                <pre><code id="install-script">#!/bin/bash
+
+# 1. Install necessary tools
+echo "Installing curl, tar, and openssl..."
+apt update && apt install -y curl tar openssl
+
+# 2. Detect architecture
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)
+        ARCH="amd64"
+        ;;
+    aarch64)
+        ARCH="arm64"
+        ;;
+    *)
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+        ;;
+esac
+echo "Detected architecture: $ARCH"
+
+# 3. Get the latest version of sing-box
+LATEST_VERSION=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/v//')
+echo "Latest sing-box version: $LATEST_VERSION"
+DOWNLOAD_URL="https://github.com/SagerNet/sing-box/releases/download/v${LATEST_VERSION}/sing-box-${LATEST_VERSION}-linux-${ARCH}.tar.gz"
+
+# 4. Download and install
+echo "Downloading from $DOWNLOAD_URL"
+curl -sLo /tmp/sing-box.tar.gz "$DOWNLOAD_URL"
+tar -xzf /tmp/sing-box.tar.gz -C /usr/local/bin --strip-components=1 "sing-box-${LATEST_VERSION}-linux-${ARCH}/sing-box"
+chmod +x /usr/local/bin/sing-box
+rm /tmp/sing-box.tar.gz
+
+# 5. Create config directory
+mkdir -p /etc/sing-box/
+
+# 6. Create systemd service file
+echo "Creating systemd service..."
+cat > /etc/systemd/system/sing-box.service <<'EOF'
+[Unit]
+Description=sing-box service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/sing-box run -D /etc/sing-box
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=infinity
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 7. Enable and start service
+systemctl daemon-reload
+systemctl enable sing-box
+
+echo "----------------------------------------"
+echo "Sing-box installation complete!"
+echo "Version $(/usr/local/bin/sing-box version)"
+echo ""
+echo "Next steps:"
+echo "1. Place your .json config files into /etc/sing-box/"
+echo "2. Start the service with: systemctl start sing-box"
+echo "3. Check status with: systemctl status sing-box"
+echo "4. View logs with: journalctl -u sing-box -f"
+echo "----------------------------------------"
+</code></pre>
+            </div>
+        </div>
+
+        <footer class="text-center text-muted mt-5">
+            <p>&copy; 2024-2025. 本工具仅供学习和研究使用，请遵守当地法律法规。</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- Helper Functions ---
+        function generateUUID() {
+            return crypto.randomUUID();
+        }
+
+        function generatePassword(length) {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function copyToClipboard(elementId, buttonElement) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = buttonElement.innerHTML;
+                buttonElement.innerHTML = '<i class="bi bi-check-lg"></i> 已复制!';
+                setTimeout(() => {
+                    buttonElement.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        function toggleMihomoCompression(button) {
+            const preElement = document.getElementById('mihomo-config-output');
+            const isCompressed = button.dataset.compressed === 'true';
+
+            if (isCompressed) {
+                // Expand
+                preElement.textContent = preElement.dataset.originalContent;
+                button.innerHTML = '<i class="bi bi-arrows-angle-contract"></i> 压缩';
+                button.dataset.compressed = 'false';
+            } else {
+                // Compress
+                const originalContent = preElement.textContent;
+                preElement.dataset.originalContent = originalContent; // Save original content
+                const compressedContent = originalContent
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line && !line.startsWith('#'))
+                    .join(', ');
+                preElement.textContent = `{ ${compressedContent} }`;
+                button.innerHTML = '<i class="bi bi-arrows-angle-expand"></i> 展开';
+                button.dataset.compressed = 'true';
+            }
+        }
+
+        // --- Main Generation Logic ---
+        function generateAllConfigs(protocol) {
+            const serverIp = document.getElementById('server-ip').value;
+            if (!serverIp) {
+                alert('请输入服务器 IP / 域名!');
+                return;
+            }
+
+            let serverConfig = {};
+            let shareLink = '';
+            let mihomoConfig = '';
+            let helperCommands = '';
+            let params = { serverIp };
+            
+            const outputContainer = document.getElementById('output-container');
+            const realityWarning = document.getElementById('reality-key-warning');
+            const shareLinkWarning = document.getElementById('share-link-warning');
+            const helperCommandsCard = document.getElementById('helper-commands-card');
+            const mihomoCompressBtn = document.getElementById('mihomo-compress-btn');
+
+            realityWarning.classList.add('d-none');
+            shareLinkWarning.classList.add('d-none');
+            helperCommandsCard.classList.add('d-none');
+
+            // Collect params and generate configs
+            switch (protocol) {
+                case 'reality':
+                    params.uuid = document.getElementById('reality-uuid').value;
+                    params.port = parseInt(document.getElementById('reality-listen-port').value);
+                    params.sni = document.getElementById('reality-sni').value;
+                    params.nodeName = `VLESS-REALITY-${serverIp}`;
+                    
+                    realityWarning.classList.remove('d-none');
+                    helperCommandsCard.classList.remove('d-none');
+                    helperCommands = 'sing-box generate reality-keypair';
+
+                    serverConfig = getServerConfig(protocol, params);
+                    shareLink = getShareLink(protocol, params);
+                    mihomoConfig = getMihomoConfig(protocol, params);
+                    break;
+
+                case 'shadowtls':
+                    params.uuid = document.getElementById('shadowtls-uuid').value;
+                    params.password = document.getElementById('shadowtls-password').value;
+                    params.port = parseInt(document.getElementById('shadowtls-listen-port').value);
+                    params.sni = document.getElementById('shadowtls-sni').value;
+                    params.wsPath = document.getElementById('shadowtls-ws-path').value;
+                    params.nodeName = `VLESS-WSS-ShadowTLS-${serverIp}`;
+
+                    shareLinkWarning.innerHTML = '<i class="bi bi-info-circle-fill"></i> ShadowTLS 没有统一的分享链接标准，以下链接可能不兼容所有客户端。强烈推荐使用下方更可靠的 Mihomo 配置。';
+                    shareLinkWarning.classList.remove('d-none');
+
+                    serverConfig = getServerConfig(protocol, params);
+                    shareLink = getShareLink(protocol, params);
+                    mihomoConfig = getMihomoConfig(protocol, params);
+                    break;
+
+                case 'hysteria':
+                    params.password = document.getElementById('hysteria-password').value;
+                    params.port = document.getElementById('hysteria-listen-port').value;
+                    params.sni = document.getElementById('hysteria-sni').value || params.serverIp;
+                    params.certPath = document.getElementById('hysteria-cert-path').value;
+                    params.keyPath = document.getElementById('hysteria-key-path').value;
+                    params.nodeName = `Hysteria2-${params.sni}`;
+                    
+                    if (!params.certPath) {
+                        helperCommandsCard.classList.remove('d-none');
+                        helperCommands = `# 生成有效期为10年的自签名证书:\nopenssl ecparam -genkey -name prime256v1 -out /etc/sing-box/private.key\nopenssl req -new -x509 -days 3650 -key /etc/sing-box/private.key -out /etc/sing-box/cert.pem -subj "/CN=${params.sni}"`;
+                    }
+
+                    serverConfig = getServerConfig(protocol, params);
+                    shareLink = getShareLink(protocol, params);
+                    mihomoConfig = getMihomoConfig(protocol, params);
+                    break;
+            }
+
+            // Populate outputs
+            const mihomoOutput = document.getElementById('mihomo-config-output');
+            document.getElementById('server-config-output').textContent = JSON.stringify(serverConfig, null, 4);
+            document.getElementById('share-link-output').textContent = shareLink;
+            mihomoOutput.textContent = mihomoConfig;
+            mihomoOutput.dataset.originalContent = mihomoConfig; // Store for expansion
+            document.getElementById('helper-commands-output').textContent = helperCommands;
+            
+            // Reset compression button state
+            mihomoCompressBtn.innerHTML = '<i class="bi bi-arrows-angle-contract"></i> 压缩';
+            mihomoCompressBtn.dataset.compressed = 'false';
+
+            outputContainer.classList.remove('d-none');
+        }
+
+        function getServerConfig(protocol, params) {
+            switch (protocol) {
+                case 'reality':
+                    return {
+                        "log": { "level": "info", "timestamp": true },
+                        "inbounds": [{
+                            "type": "vless", "tag": "vless-in", "listen": "::", "listen_port": params.port,
+                            "users": [{ "uuid": params.uuid, "flow": "xtls-rprx-vision" }],
+                            "transport": {
+                                "type": "tcp",
+                                "tls": {
+                                    "enabled": true, "server_name": params.sni,
+                                    "reality": {
+                                        "enabled": true,
+                                        "handshake": { "server": params.sni, "server_name": params.sni },
+                                        "private_key": "!!! PASTE_YOUR_PRIVATE_KEY_HERE !!!",
+                                        "public_key": "!!! PASTE_YOUR_PUBLIC_KEY_HERE !!!"
+                                    }
+                                }
+                            }
+                        }],
+                        "outbounds": [{ "type": "direct", "tag": "direct" }]
+                    };
+                case 'shadowtls':
+                     return {
+                        "log": { "level": "info", "timestamp": true },
+                        "inbounds": [
+                            {
+                                "type": "shadowtls", "tag": "shadowtls-in", "listen": "::", "listen_port": params.port,
+                                "version": 3, "password": params.password, "server_name": params.sni, "detour": "vless-ws-in"
+                            },
+                            {
+                                "type": "vless", "tag": "vless-ws-in", "listen": "127.0.0.1", "listen_port": 20001,
+                                "users": [{ "uuid": params.uuid, "flow": "" }],
+                                "transport": { "type": "ws", "path": params.wsPath }
+                            }
+                        ],
+                        "outbounds": [{ "type": "direct", "tag": "direct" }]
+                    };
+                case 'hysteria':
+                    const tlsConfig = { "enabled": true, "alpn": ["h3"] };
+                    if (params.certPath && params.keyPath) {
+                        tlsConfig.certificate_path = params.certPath;
+                        tlsConfig.key_path = params.keyPath;
+                    } else {
+                        tlsConfig.self_signed = true;
+                    }
+
+                    const config = {
+                        "log": { "level": "info", "timestamp": true },
+                        "inbounds": [{
+                            "type": "hysteria2", "tag": "hy2-in", "listen": "::",
+                            "users": [{ "password": params.password }],
+                            "tls": tlsConfig
+                        }],
+                        "outbounds": [{ "type": "direct", "tag": "direct" }]
+                    };
+                    if (params.port.includes('-')) {
+                        config.inbounds[0].listen_port = params.port;
+                    } else {
+                        config.inbounds[0].listen_port = parseInt(params.port);
+                    }
+                    return config;
+            }
+        }
+
+        function getShareLink(protocol, params) {
+            const encodedName = encodeURIComponent(params.nodeName);
+            switch (protocol) {
+                case 'reality':
+                    const realityParams = new URLSearchParams({
+                        encryption: 'none',
+                        flow: 'xtls-rprx-vision',
+                        security: 'reality',
+                        sni: params.sni,
+                        fp: 'chrome',
+                        pbk: '!!!_PASTE_YOUR_PUBLIC_KEY_HERE_!!!'
+                    });
+                    return `vless://${params.uuid}@${params.serverIp}:${params.port}?${realityParams.toString()}#${encodedName}`;
+                case 'shadowtls':
+                     const shadowtlsParams = new URLSearchParams({
+                        encryption: 'none',
+                        security: 'tls',
+                        sni: params.sni,
+                        type: 'ws',
+                        host: params.sni,
+                        path: encodeURIComponent(params.wsPath)
+                    });
+                    return `vless://${params.uuid}@${params.serverIp}:${params.port}?${shadowtlsParams.toString()}#${encodedName}`;
+                case 'hysteria':
+                    const hy2Params = new URLSearchParams({ sni: params.sni });
+                    return `hy2://${params.password}@${params.serverIp}:${params.port}?${hy2Params.toString()}#${encodedName}`;
+            }
+        }
+
+        function getMihomoConfig(protocol, params) {
+            switch (protocol) {
+                case 'reality':
+                    return `- name: ${params.nodeName}\n  type: vless\n  server: ${params.serverIp}\n  port: ${params.port}\n  uuid: ${params.uuid}\n  network: tcp\n  tls: true\n  flow: xtls-rprx-vision\n  client-fingerprint: chrome\n  servername: ${params.sni}\n  reality-opts:\n    public-key: '!!! PASTE_YOUR_PUBLIC_KEY_HERE !!!'\n    # short-id: '' # Optional`;
+                case 'shadowtls':
+                    return `- name: ${params.nodeName}\n  type: vless\n  server: ${params.serverIp}\n  port: ${params.port}\n  uuid: ${params.uuid}\n  network: ws\n  tls: true\n  servername: ${params.sni}\n  ws-opts:\n    path: "${params.wsPath}"\n    headers:\n      Host: ${params.sni}\n  shadow-tls-opts:\n    version: 3\n    password: '${params.password}'`;
+                case 'hysteria':
+                    return `- name: ${params.nodeName}\n  type: hysteria2\n  server: ${params.serverIp}\n  port: ${params.port}\n  password: ${params.password}\n  sni: ${params.sni}\n  # up: 50          # Optional, upload speed in Mbps\n  # down: 200       # Optional, download speed in Mbps`;
+            }
+        }
+
+        // --- Initial Population ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('reality-uuid').value = generateUUID();
+            document.getElementById('shadowtls-uuid').value = generateUUID();
+            document.getElementById('shadowtls-password').value = generatePassword(16);
+            document.getElementById('hysteria-password').value = generatePassword(24);
+        });
+    </script>
+</body>
+</html>
